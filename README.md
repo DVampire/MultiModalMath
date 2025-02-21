@@ -1,425 +1,141 @@
-# Open R1
+<h1 style="text-align: center;">verl: Volcano Engine Reinforcement Learning for LLM</h1>
 
-*A fully open reproduction of DeepSeek-R1. This repo is a work in progress, let's build it together!*
+verl is a flexible, efficient and production-ready RL training library for large language models (LLMs).
 
-**Table of Contents**  
-1. [Overview](#overview)  
-2. [Plan of attack](#plan-of-attack)  
-3. [Installation](#installation)  
-4. [Training models](#training-models)  
-   - [SFT](#sft)  
-   - [GRPO](#grpo)  
-5. [Evaluating models](#evaluating-models)  
-6. [Reproducing Deepseek's evaluation results](#reproducing-deepseeks-evaluation-results)  
-7. [Data generation](#data-generation)  
-   - [Generate data from a smol distilled R1 model](#generate-data-from-a-smol-distilled-r1-model)  
-   - [Generate data from DeepSeek-R1](#generate-data-from-deepseek-r1)  
-8. [Contributing](#contributing)
+verl is the open-source version of **[HybridFlow: A Flexible and Efficient RLHF Framework](https://arxiv.org/abs/2409.19256v2)** paper.
 
-## Overview
+verl is flexible and easy to use with:
 
-The goal of this repo is to build the missing pieces of the R1 pipeline such that everybody can reproduce and build on top of it. The project is simple by design and mostly consists of:
+- **Easy extension of diverse RL algorithms**: The Hybrid programming model combines the strengths of single-controller and multi-controller paradigms to enable flexible representation and efficient execution of complex Post-Training dataflows. Allowing users to build RL dataflows in a few lines of code.
+
+- **Seamless integration of existing LLM infra with modular APIs**: Decouples computation and data dependencies, enabling seamless integration with existing LLM frameworks, such as PyTorch FSDP, Megatron-LM and vLLM. Moreover, users can easily extend to other LLM training and inference frameworks.
+
+- **Flexible device mapping**: Supports various placement of models onto different sets of GPUs for efficient resource utilization and scalability across different cluster sizes.
+
+- Readily integration with popular HuggingFace models
 
 
-- `src/open_r1`: contains the scripts to train and evaluate models as well as generate synthetic data:
-    - `grpo.py`: trains a model with GRPO on a given dataset.
-    - `sft.py`: performs a simple SFT of a model on a dataset.
-    - `evaluate.py`: evaluates a model on the R1 benchmarks.
-    - `generate.py`: generates synthetic data from a model using [Distilabel](https://github.com/argilla-io/distilabel).
-- `Makefile`: contains easy-to-run commands for each step in the R1 pipeline leveraging the scripts above.
+verl is fast with:
 
-### Plan of attack
+- **State-of-the-art throughput**: By seamlessly integrating existing SOTA LLM training and inference frameworks, verl achieves high generation and training throughput.
 
-We will use the DeepSeek-R1 [tech report](https://github.com/deepseek-ai/DeepSeek-R1) as a guide, which can roughly be broken down into three main steps:
+- **Efficient actor model resharding with 3D-HybridEngine**: Eliminates memory redundancy and significantly reduces communication overhead during transitions between training and generation phases.
 
-* Step 1: replicate the R1-Distill models by distilling a high-quality corpus from DeepSeek-R1.
-* Step 2: replicate the pure RL pipeline that DeepSeek used to create R1-Zero. This will likely involve curating new, large-scale datasets for math, reasoning, and code.
-* Step 3: show we can go from base model to RL-tuned via multi-stage training.
+<p align="center">
+| <a href="https://verl.readthedocs.io/en/latest/index.html"><b>Documentation</b></a> | <a href="https://arxiv.org/abs/2409.19256v2"><b>Paper</b></a> | <a href="https://join.slack.com/t/verlgroup/shared_invite/zt-2w5p9o4c3-yy0x2Q56s_VlGLsJ93A6vA"><b>Slack</b></a> | <a href="https://raw.githubusercontent.com/eric-haibin-lin/verl-community/refs/heads/main/WeChat.JPG"><b>Wechat</b></a> | <a href="https://x.com/verl_project"><b>Twitter</b></a>
 
-<center>
-    <img src="assets/plan-of-attack.png" width="500">
-</center>
+<!-- <a href=""><b>Slides</b></a> | -->
+</p>
 
+## News
+- [2025/3] We will present verl(HybridFlow) at [EuroSys 2025](https://2025.eurosys.org/). See you in in Rotterdam!
+- [2025/2] verl v0.2.0.post1 is released! See [release note](https://github.com/volcengine/verl/releases/) for details.
+- [2025/2] We presented verl in the [Bytedance/NVIDIA/Anyscale Ray Meetup](https://lu.ma/ji7atxux). See you in San Jose!
+- [2025/1] [Doubao-1.5-pro](https://team.doubao.com/zh/special/doubao_1_5_pro) is released with SOTA-level performance on LLM & VLM. The RL scaling preview model is trained using verl, reaching OpenAI O1-level performance on math benchmarks (70.0 pass@1 on AIME).
+- [2024/12] The team presented <a href="https://neurips.cc/Expo/Conferences/2024/workshop/100677">Post-training LLMs: From Algorithms to Infrastructure</a> at NeurIPS 2024. [Slides](https://github.com/eric-haibin-lin/verl-data/tree/neurips) and [video](https://neurips.cc/Expo/Conferences/2024/workshop/100677) available.
+- [2024/12] verl is presented at Ray Forward 2024. Slides available [here](https://github.com/eric-haibin-lin/verl-community/blob/main/slides/Ray_Forward_2024_%E5%B7%AB%E9%94%A1%E6%96%8C.pdf).
+- [2024/10] verl is presented at Ray Summit. [Youtube video](https://www.youtube.com/watch?v=MrhMcXkXvJU&list=PLzTswPQNepXntmT8jr9WaNfqQ60QwW7-U&index=37) available.
+- [2024/08] HybridFlow (verl) is accepted to EuroSys 2025.
 
-## Installation
+## Key Features
 
-> [!CAUTION]
-> Libraries rely on CUDA 12.4. If you see errors related to segmentation faults, double check the version your system is running with `nvcc --version`.
+- **FSDP** and **Megatron-LM** for training.
+- **vLLM** and **TGI** for rollout generation, **SGLang** support coming soon.
+- huggingface models support
+- Supervised fine-tuning
+- Reinforcement learning from human feedback with [PPO](https://github.com/volcengine/verl/tree/main/examples/ppo_trainer), [GRPO](https://github.com/volcengine/verl/tree/main/examples/grpo_trainer), [ReMax](https://github.com/volcengine/verl/tree/main/examples/remax_trainer), Reinforce++, etc
+  - Support model-based reward and function-based reward (verifiable reward)
+- flash-attention, [sequence packing](examples/ppo_trainer/run_qwen2-7b_seq_balance.sh), [long context](examples/ppo_trainer/run_deepseek7b_llm_sp2.sh) support via DeepSpeed Ulysses, [LoRA](examples/sft/gsm8k/run_qwen_05_peft.sh), [Liger-kernel](examples/sft/gsm8k/run_qwen_05_sp2_liger.sh)
+- scales up to 70B models and hundreds of GPUs
+- experiment tracking with wandb, swanlab and mlflow
 
-To run the code in this project, first, create a Python virtual environment using e.g. `uv`.
-To install `uv`, follow the [UV Installation Guide](https://docs.astral.sh/uv/getting-started/installation/).
+## Upcoming Features
+- Reward model training
+- DPO training
+- DeepSeek integration with Megatron backend
+- SGLang integration
+- vision language model RL
 
+## Getting Started
 
-```shell
-uv venv openr1 --python 3.11 && source openr1/bin/activate && uv pip install --upgrade pip --link-mode=copy
+**Quickstart:**
+- [Installation](https://verl.readthedocs.io/en/latest/start/install.html)
+- [Quickstart](https://verl.readthedocs.io/en/latest/start/quickstart.html)
+- [Programming Guide](https://verl.readthedocs.io/en/latest/hybrid_flow.html)
+
+**Running a PPO example step-by-step:**
+- Data and Reward Preparation
+  - [Prepare Data for Post-Training](https://verl.readthedocs.io/en/latest/preparation/prepare_data.html)
+  - [Implement Reward Function for Dataset](https://verl.readthedocs.io/en/latest/preparation/reward_function.html)
+- Understanding the PPO Example
+  - [PPO Example Architecture](https://verl.readthedocs.io/en/latest/examples/ppo_code_architecture.html)
+  - [Config Explanation](https://verl.readthedocs.io/en/latest/examples/config.html)
+  - [Run GSM8K Example](https://verl.readthedocs.io/en/latest/examples/gsm8k_example.html)
+
+**Reproducible algorithm baselines:**
+- [PPO, GRPO, ReMax](https://verl.readthedocs.io/en/latest/experiment/ppo.html)
+
+**For code explanation and advance usage (extension):**
+- PPO Trainer and Workers
+  - [PPO Ray Trainer](https://verl.readthedocs.io/en/latest/workers/ray_trainer.html)
+  - [PyTorch FSDP Backend](https://verl.readthedocs.io/en/latest/workers/fsdp_workers.html)
+  - [Megatron-LM Backend](https://verl.readthedocs.io/en/latest/index.html)
+- Advance Usage and Extension
+  - [Ray API design tutorial](https://verl.readthedocs.io/en/latest/advance/placement.html)
+  - [Extend to Other RL(HF) algorithms](https://verl.readthedocs.io/en/latest/advance/dpo_extension.html)
+  - [Add Models with the FSDP Backend](https://verl.readthedocs.io/en/latest/advance/fsdp_extension.html)
+  - [Add Models with the Megatron-LM Backend](https://verl.readthedocs.io/en/latest/advance/megatron_extension.html)
+  - [Deployment using Separate GPU Resources](https://github.com/volcengine/verl/tree/main/examples/split_placement)
+
+**Blogs from the community**
+- [HybridFlow veRL 原文浅析](https://github.com/zhaochenyang20/Awesome-ML-SYS-Tutorial/blob/main/rlhf/verl/readme.md)
+- [最高提升20倍吞吐量！豆包大模型团队发布全新 RLHF 框架，现已开源！](https://team.doubao.com/en/blog/%E6%9C%80%E9%AB%98%E6%8F%90%E5%8D%8720%E5%80%8D%E5%90%9E%E5%90%90%E9%87%8F-%E8%B1%86%E5%8C%85%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%9B%A2%E9%98%9F%E5%8F%91%E5%B8%83%E5%85%A8%E6%96%B0-rlhf-%E6%A1%86%E6%9E%B6-%E7%8E%B0%E5%B7%B2%E5%BC%80%E6%BA%90)
+
+Checkout this [Jupyter Notebook](https://github.com/volcengine/verl/tree/main/examples/ppo_trainer/verl_getting_started.ipynb) to get started with PPO training with a single 24GB L4 GPU (**FREE** GPU quota provided by [Lighting Studio](https://lightning.ai/hlin-verl/studios/verl-getting-started))!
+
+## Performance Tuning Guide
+The performance is essential for on-policy RL algorithm. We write a detailed performance tuning guide to allow people tune the performance. See [here](https://verl.readthedocs.io/en/latest/perf/perf_tuning.html) for more details.
+
+## vLLM v0.7 testing version
+We have released a testing version of veRL that supports vLLM>=0.7.0. Please refer to [this document](https://github.com/volcengine/verl/blob/main/docs/README_vllm0.7.md) for installation guide and more information.
+
+## Citation and acknowledgement
+
+If you find the project helpful, please cite:
+- [HybridFlow: A Flexible and Efficient RLHF Framework](https://arxiv.org/abs/2409.19256v2)
+- [A Framework for Training Large Language Models for Code Generation via Proximal Policy Optimization](https://i.cs.hku.hk/~cwu/papers/gmsheng-NL2Code24.pdf)
+
+```tex
+@article{sheng2024hybridflow,
+  title   = {HybridFlow: A Flexible and Efficient RLHF Framework},
+  author  = {Guangming Sheng and Chi Zhang and Zilingfeng Ye and Xibin Wu and Wang Zhang and Ru Zhang and Yanghua Peng and Haibin Lin and Chuan Wu},
+  year    = {2024},
+  journal = {arXiv preprint arXiv: 2409.19256}
+}
 ```
 
-Next, install vLLM:
+verl is inspired by the design of Nemo-Aligner, Deepspeed-chat and OpenRLHF. The project is adopted and supported by Anyscale, Bytedance, LMSys.org, Shanghai AI Lab, Tsinghua University, UC Berkeley, UCLA, UIUC, and University of Hong Kong.
 
-```shell
-uv pip install vllm==0.7.1 --link-mode=copy
+## Awesome work using verl
+- [Enhancing Multi-Step Reasoning Abilities of Language Models through Direct Q-Function Optimization](https://arxiv.org/abs/2410.09302)
+- [Flaming-hot Initiation with Regular Execution Sampling for Large Language Models](https://arxiv.org/abs/2410.21236)
+- [Process Reinforcement Through Implicit Rewards](https://github.com/PRIME-RL/PRIME/)
+- [TinyZero](https://github.com/Jiayi-Pan/TinyZero): a reproduction of DeepSeek R1 Zero recipe for reasoning tasks
+- [RAGEN](https://github.com/ZihanWang314/ragen): a general-purpose reasoning agent training framework
+- [Logic R1](https://github.com/Unakar/Logic-RL): a reproduced DeepSeek R1 Zero on 2K Tiny Logic Puzzle Dataset.
+- [deepscaler](https://github.com/agentica-project/deepscaler): iterative context scaling with GRPO
+- [critic-rl](https://github.com/HKUNLP/critic-rl): Teaching Language Models to Critique via Reinforcement Learning
+
+## Contribution Guide
+Contributions from the community are welcome!
+
+### Code formatting
+We use yapf (Google style) to enforce strict code formatting when reviewing PRs. To reformat you code locally, make sure you installed **latest** `yapf`
+```bash
+pip3 install yapf --upgrade
 ```
-
-This will also install PyTorch `v2.5.1` and it is **very important** to use this version since the vLLM binaries are compiled for it. You can then install the remaining dependencies for your specific use case via `pip install -e .[LIST OF MODES]`. For most contributors, we recommend:
-
-```shell
-GIT_LFS_SKIP_SMUDGE=1 uv pip install -e ".[dev]" --link-mode=copy
+Then, make sure you are at top level of verl repo and run
+```bash
+bash scripts/format.sh
 ```
-
-Next, log into your Hugging Face and Weights and Biases accounts as follows:
-
-```shell
-huggingface-cli login
-wandb login
-```
-
-Finally, check whether your system has Git LFS installed so that you can load and push models/datasets to the Hugging Face Hub:
-
-```shell
-git-lfs --version
-```
-
-If it isn't installed, run:
-
-```shell
-sudo apt-get install git-lfs
-```
-
-## Training models
-
-We support training models with either DDP or DeepSpeed (ZeRO-2 and ZeRO-3). For example, to run SFT on a dataset distilled from DeepSeek-R1 with reasoning traces such as [Bespoke-Stratos-17k](https://huggingface.co/datasets/bespokelabs/Bespoke-Stratos-17k), run:
-
-```shell
-# Train via command line
-accelerate launch --config_file=recipes/accelerate_configs/zero3.yaml src/open_r1/sft.py \
-    --model_name_or_path Qwen/Qwen2.5-1.5B-Instruct \
-    --dataset_name HuggingFaceH4/Bespoke-Stratos-17k \
-    --learning_rate 2.0e-5 \
-    --num_train_epochs 1 \
-    --packing \
-    --max_seq_length 4096 \
-    --per_device_train_batch_size 2 \
-    --gradient_accumulation_steps 8 \
-    --gradient_checkpointing \
-    --bf16 \
-    --output_dir data/Qwen2.5-1.5B-Open-R1-Distill
-
-# Train via YAML config
-accelerate launch --config_file recipes/accelerate_configs/zero3.yaml src/open_r1/sft.py \
-    --config recipes/Qwen2.5-1.5B-Instruct/sft/config_demo.yaml
-```
-
-Currently, the following tasks are supported:
-
-* Supervised Fine-Tuning `sft`
-* Group Relative Policy Optimization `grpo`
-
-> [!TIP]
-> If you scale up/down the number of GPUs, we recommend also scaling up the per-device batch size or number of gradient accumulation steps to keep the global batch size constant.
-
-By default, these scripts will push each model to your Hugging Face Hub username, i.e. `{username}/{model_name}-{task}`. You can override the parameters in each YAML config by appending them to the command as follows: 
-
-```shell
-# Change batch size, number of epochs etc
-accelerate launch --config_file recipes/accelerate_configs/zero3.yaml src/open_r1/sft.py \
-    --config recipes/Qwen2.5-1.5B-Instruct/sft/config_demo.yaml
-    --per_device_train_batch_size=1 --num_train_epochs=5
-```
-
-> [!NOTE]
-> The training commands below are configured for a node of 8 x H100s (80GB). For different hardware and topologies, you may need to tune the batch size and number of gradient accumulation steps.
-
-### SFT
-
-To run SFT on a dataset distilled from DeepSeek-R1 with reasoning traces such as [Bespoke-Stratos-17k](https://huggingface.co/datasets/bespokelabs/Bespoke-Stratos-17k), run:
-
-```shell
-ACCELERATE_LOG_LEVEL=info accelerate launch --config_file recipes/accelerate_configs/zero3.yaml \
-    src/open_r1/sft.py \
-    --config recipes/Qwen2.5-1.5B-Instruct/sft/config_demo.yaml
-```
-
-### GRPO
-
-To train via the GRPO trainer, we use one GPU to run vLLM for faster generation and the remaining GPUs for training. For example, one a node with 8 GPUs, use the `recipes/accelerate_configs/zero3.yaml` config and then overwrite `num_processes` to run on 7 devices:
-
-```shell
-ACCELERATE_LOG_LEVEL=info accelerate launch --config_file recipes/accelerate_configs/zero3.yaml \
-    --num_processes=7 src/open_r1/grpo.py \
-    --config recipes/Qwen2.5-1.5B-Instruct/grpo/config_demo.yaml
-```
-
-We provide a minimal reproducible experiment using GRPO for mathematical reasoning, referencing the approach from [SimpleRL-Reason](https://hkust-nlp.notion.site/simplerl-reason) which uses a 7B model trained on 8K examples. Running this on 8 H100 80G GPU takes about 3 hours:
-
-```shell
-ACCELERATE_LOG_LEVEL=info accelerate launch --config_file recipes/accelerate_configs/zero2.yaml \
-    --num_processes=7 src/open_r1/grpo.py \
-    --config recipes/Qwen2.5-Math-7B/grpo/config_simple_rl.yaml
-```
-
-Our final [model](https://huggingface.co/Dongwei/Qwen-2.5-7B_Base_Math_smalllr), while using different learning rates, loss functions and reward structures, achieves 69.4% accuracy on MATH-500, demonstrating a 17%+ improvement over the base model.
-
-### Launching jobs on a Slurm cluster
-
-If you have access to a Slurm cluster, we provide a `slurm/train.slurm` script that will automatically queue training jobs for you. Here's how you can use it:
-
-```shell
-sbatch --job-name=open_r1 --nodes=1 slurm/train.slurm {model_name} {task} {config_suffix} {accelerator}
-```
-
-Here `{model_name}` and `{task}` are defined as above, while `{config_suffix}` refers to the specific config and `{accelerator}` refers to the choice of 🤗 Accelerate config in `recipes/accelerate_configs`. If you wish to override the default config parameters, you can provide them by appending a space-separated string like `'--arg1=value1 --arg2=value2'`. Here's a concrete example to run SFT on 1 node of 8 GPUs:
-
-```shell
-# Launch on Slurm and override default hyperparameters
-sbatch --job-name=open_r1 --nodes=1 slurm/train.slurm Qwen2.5-1.5B-Instruct sft demo zero3 '--per_device_train_batch_size=1 --num_train_epochs=5'
-```
-
-You can scale the number of nodes by increasing the `--nodes` flag.
-
-> [!NOTE]
-> The configuration in `slurm/train.slurm` is optimised for the Hugging Face Compute Cluster and may require tweaking to be adapted to your own compute nodes.
-
-## Evaluating models
-
-We use `lighteval` to evaluate models, with custom tasks defined in `src/open_r1/evaluate.py`. For models which fit on a single GPU, run:
-
-```shell
-MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
-MODEL_ARGS="pretrained=$MODEL,dtype=bfloat16,max_model_length=32768,gpu_memory_utilisation=0.8"
-OUTPUT_DIR=data/evals/$MODEL
-
-# AIME 2024
-TASK=aime24
-lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR
-
-# MATH-500
-TASK=math_500
-lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR
-
-# GPQA Diamond
-TASK=gpqa:diamond
-lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR 
-```
-
-> [!IMPORTANT]
-> You must set `max_model_length=32768` in the `vllm` command to align with the `generation_size` we define per eval. Without this, `lighteval` will throw an error.
-
-To increase throughput across multiple GPUs, use _data parallel_ as follows:
-
-```shell
-NUM_GPUS=8
-MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
-MODEL_ARGS="pretrained=$MODEL,dtype=bfloat16,data_parallel_size=$NUM_GPUS,max_model_length=32768,gpu_memory_utilisation=0.8"
-TASK=aime24
-OUTPUT_DIR=data/evals/$MODEL
-
-lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR 
-```
-
-For large models which require sharding across GPUs, use _tensor parallel_ and run:
-
-```shell
-NUM_GPUS=8
-MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
-MODEL_ARGS="pretrained=$MODEL,dtype=bfloat16,tensor_parallel_size=$NUM_GPUS,max_model_length=32768,gpu_memory_utilisation=0.8"
-TASK=aime24
-OUTPUT_DIR=data/evals/$MODEL
-
-export VLLM_WORKER_MULTIPROC_METHOD=spawn
-lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR 
-```
-
-You can also launch an evaluation with `make evaluate`, specifying the model, task, and optionally the parallelism technique and number of GPUs.
-
-To evaluate on a single GPU:
-
-```shell
-make evaluate MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B TASK=aime24
-```
-
-To use Data Parallelism:
-
-```shell
-make evaluate MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B TASK=aime24 PARALLEL=data NUM_GPUS=8
-```
-
-To use Tensor Parallelism:
-
-```shell
-make evaluate MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B TASK=aime24 PARALLEL=tensor NUM_GPUS=8
-```
-
-## Reproducing Deepseek's evaluation results
-
-> [!NOTE]
-> The DeepSeek-R1 paper uses sampling with a temperature of 0.6, a top-p value of 0.95, and 64 responses per query to estimate `pass@1`. Below, we report the results from greedy decoding, which likely explains the small 1-3σ discrepancies between our results and theirs.
-
-### MATH-500
-
-We are able to reproduce Deepseek's reported results on the MATH-500 benchmark within ~1-3 standard deviations:
-
-| Model                         | MATH-500 (🤗 LightEval) | MATH-500 (DeepSeek Reported) |
-|:------------------------------|:-----------------------:|:----------------------------:|
-| DeepSeek-R1-Distill-Qwen-1.5B |          81.2           |             83.9             |
-| DeepSeek-R1-Distill-Qwen-7B   |          91.8           |             92.8             |
-| DeepSeek-R1-Distill-Qwen-14B  |          94.2           |             93.9             |
-| DeepSeek-R1-Distill-Qwen-32B  |          95.0           |             94.3             |
-| DeepSeek-R1-Distill-Llama-8B  |          85.4           |             89.1             |
-| DeepSeek-R1-Distill-Llama-70B |          93.4           |             94.5             |
-
-To reproduce these results use the following command:
-
-```shell
-NUM_GPUS=1 # Set to 8 for 32B and 70B models
-MODEL=deepseek-ai/{model_name}
-MODEL_ARGS="pretrained=$MODEL,dtype=bfloat16,max_model_length=32768,gpu_memory_utilisation=0.8,tensor_parallel_size=$NUM_GPUS"
-OUTPUT_DIR=data/evals/$MODEL
-
-lighteval vllm $MODEL_ARGS "custom|math_500|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR
-```
-
-Alternatively, you can launch Slurm jobs as follows:
-
-```shell
-python scripts/run_benchmarks.py --model-id={model_id}  --benchmarks math_500
-```
-
-### GPQA Diamond
-
-We are able to reproduce Deepseek's reported results on the GPQA Diamond benchmark within ~1-3 standard deviations:
-
-| Model                         | GPQA Diamond (🤗 LightEval) | GPQA Diamond (DeepSeek Reported) |
-|:------------------------------|:---------------------------:|:--------------------------------:|
-| DeepSeek-R1-Distill-Qwen-1.5B |            33.3             |               33.8               |
-| DeepSeek-R1-Distill-Qwen-7B   |            48.4             |               49.1               |
-| DeepSeek-R1-Distill-Qwen-14B  |            55.6             |               59.1               |
-| DeepSeek-R1-Distill-Qwen-32B  |            58.6             |               62.1               |
-| DeepSeek-R1-Distill-Llama-8B  |            51.0             |               49.0               |
-| DeepSeek-R1-Distill-Llama-70B |            65.2             |               65.2               |
-
-To reproduce these results use the following command:
-
-```shell
-NUM_GPUS=1 # Set to 8 for 32B and 70B models
-MODEL=deepseek-ai/{model_name}
-MODEL_ARGS="pretrained=$MODEL,dtype=bfloat16,max_model_length=32768,gpu_memory_utilisation=0.8,tensor_parallel_size=$NUM_GPUS"
-OUTPUT_DIR=data/evals/$MODEL
-
-lighteval vllm $MODEL_ARGS "custom|gpqa:diamond|0|0" \
-    --custom-tasks src/open_r1/evaluate.py \
-    --use-chat-template \
-    --output-dir $OUTPUT_DIR
-```
-
-```shell
-python scripts/run_benchmarks.py --model-id={model_id}  --benchmarks gpqa
-```
-
-## Data generation
-
-### Generate data from a smol distilled R1 model
-
-The following example can be run in 1xH100. 
-First install the following dependencies:
-
-```shell
-uv pip install "distilabel[vllm]>=1.5.2"
-```
-
-Now save the following snippet into a file named `pipeline.py` and run it with `python pipeline.py`. It will generate 4 outputs for each of the 10 examples (change the username for the repository to your org/user name):
-
-```python
-from datasets import load_dataset
-from distilabel.models import vLLM
-from distilabel.pipeline import Pipeline
-from distilabel.steps.tasks import TextGeneration
-
-
-prompt_template = """\
-You will be given a problem. Please reason step by step, and put your final answer within \boxed{}:
-{{ instruction }}"""
-
-dataset = load_dataset("AI-MO/NuminaMath-TIR", split="train").select(range(10))
-
-model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"  # Exchange with another smol distilled r1
-
-with Pipeline(
-    name="distill-qwen-7b-r1",
-    description="A pipeline to generate data from a distilled r1 model",
-) as pipeline:
-
-    llm = vLLM(
-        model=model_id,
-        tokenizer=model_id,
-        extra_kwargs={
-            "tensor_parallel_size": 1,
-            "max_model_len": 8192,
-        },
-        generation_kwargs={
-            "temperature": 0.6,
-            "max_new_tokens": 8192,
-        },
-    )
-    prompt_column = "problem"
-    text_generation = TextGeneration(
-        llm=llm, 
-        template=prompt_template,
-        num_generations=4,
-        input_mappings={"instruction": prompt_column} if prompt_column is not None else {}
-    )
-
-
-if __name__ == "__main__":
-    distiset = pipeline.run(dataset=dataset)
-    distiset.push_to_hub(repo_id="username/numina-deepseek-r1-qwen-7b")
-```
-
-Take a look at the sample dataset at [HuggingFaceH4/numina-deepseek-r1-qwen-7b](https://huggingface.co/datasets/HuggingFaceH4/numina-deepseek-r1-qwen-7b).
-
-
-### Generate data from DeepSeek-R1
-
-To run the bigger DeepSeek-R1, we used 2 nodes, each with 8×H100 GPUs using the slurm file present in this repo at `slurm/generate.slurm`. First, install the dependencies:
-
-(for now we need to install the vllm dev wheel that [fixes the R1 cuda graph capture](https://github.com/vllm-project/vllm/commits/221d388cc5a836fa189305785ed7e887cea8b510/csrc/moe/moe_align_sum_kernels.cu))
-```shell
-pip install https://wheels.vllm.ai/221d388cc5a836fa189305785ed7e887cea8b510/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl --extra-index-url https://download.pytorch.org/whl/cu121
-
-uv pip install "distilabel[vllm,ray,openai]>=1.5.2"
-```
-
-And then run the following command:
-
-```shell
-sbatch slurm/generate.slurm \
-    --hf-dataset AI-MO/NuminaMath-TIR \
-    --temperature 0.6 \
-    --prompt-column problem \
-    --model deepseek-ai/DeepSeek-R1 \
-    --hf-output-dataset username/r1-dataset
-```
-
-> [!NOTE]  
-> While the job is running, you can setup an SSH tunnel through the cluster login node to access the Ray dashboard from your computer running `ssh -L 8265:ray_ip_head_node:8265 <login_node>`, then browsing `http://localhost:8265`
-
-## Contributing
-
-Contributions are welcome. Please refer to https://github.com/huggingface/open-r1/issues/23.
+We are HIRING! Send us an [email](mailto:haibin.lin@bytedance.com) if you are interested in internship/FTE opportunities in MLSys/LLM reasoning/multimodal alignment.

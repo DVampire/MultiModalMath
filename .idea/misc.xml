@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="cta" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="open-r1" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="verl" project-jdk-type="Python SDK" />
 </project>

@@ -14,7 +14,7 @@
 """Utils for tokenization."""
 import warnings
 
-__all__ = ['hf_tokenizer']
+__all__ = ['hf_tokenizer', 'hf_processor']
 
 
 def set_pad_token_id(tokenizer):
@@ -56,3 +56,20 @@ def hf_tokenizer(name_or_path, correct_pad_token=True, correct_gemma2=True, **kw
     if correct_pad_token:
         set_pad_token_id(tokenizer)
     return tokenizer
+
+def hf_processor(name_or_path, correct_pad_token=True, correct_gemma2=True, **kwargs):
+    """Create a huggingface pretrained processor.
+
+    Args:
+        name (str): The name of the processor.
+        correct_pad_token (bool): Whether to correct the pad token id.
+        correct_gemma2 (bool): Whether to correct the gemma2 processor.
+        **kwargs: The keyword arguments for the processor.
+
+    Returns:
+        transformers.AutoProcessor: The pretrained processor.
+
+    """
+    from transformers import AutoProcessor
+    processor = AutoProcessor.from_pretrained(name_or_path, **kwargs)
+    return processor

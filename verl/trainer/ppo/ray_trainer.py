@@ -24,6 +24,7 @@ from enum import Enum
 from pprint import pprint
 from typing import Type, Dict
 from copy import deepcopy
+import base64
 
 import numpy as np
 from codetiming import Timer
@@ -196,6 +197,39 @@ def _compute_response_info(batch):
         prompt_length=prompt_length,
         response_length=response_length,
     )
+
+def _chat_template_func(messages, is_multimodal = False):
+    res_messages = []
+    if not is_multimodal:
+        for message in messages:
+            new_message = {}
+            new_message['role'] = message['role']
+            new_message['content'] = message['content']
+            res_messages.append(new_message)
+    else:
+        for message in messages:
+            new_message = {}
+            new_message['role'] = message['role']
+            content = message['content']
+            new_content = []
+            for item in content:
+                if item['type'] == 'image':
+                    image = base64.b64encode(item['image']['bytes']).decode('utf-8')
+                    new_item = {
+                        "type": "image",
+                        "image": "data:image;base64," + image
+                    }
+                    new_content.append(new_item)
+                elif item['type'] == 'text':
+                    new_item = {
+                        "type": "text",
+                        "text": item['text']
+                    }
+                    new_content.append(new_item)
+            new_message['content'] = new_content
+            res_messages.append(new_message)
+    return res_messages
+
 
 
 def compute_data_metrics(batch, use_critic=True):
@@ -464,9 +498,11 @@ class RayPPOTrainer(object):
         # TODO: we have to make sure the batch size is divisible by the dp size
         self.train_dataset = RLHFDataset(parquet_files=self.config.data.train_files,
                                          tokenizer=self.tokenizer,
+                                         is_multimodal=self.config.data.is_multimodal,
                                          prompt_key=self.config.data.prompt_key,
                                          max_prompt_length=self.config.data.max_prompt_length,
                                          filter_prompts=True,
+                                         chat_template_func=_chat_template_func,
                                          return_raw_chat=self.config.data.get('return_raw_chat', False),
                                          truncation='error')
         # use sampler for better ckpt resume

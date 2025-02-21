@@ -3,6 +3,13 @@
   <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
+      <paths name="172.21.25.62">
+        <serverdata>
+          <mappings>
+            <mapping deploy="MultiModalMath" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="aliyun">
         <serverdata>
           <mappings>

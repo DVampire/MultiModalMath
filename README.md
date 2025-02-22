@@ -35,3 +35,18 @@ python tools/process.py
 ```bash
 sh run_qwen2.5-vl-3b.sh
 ```
+
+# Citation
+```bibtex
+@article{sheng2024hybridflow,
+  title   = {HybridFlow: A Flexible and Efficient RLHF Framework},
+  author  = {Guangming Sheng and Chi Zhang and Zilingfeng Ye and Xibin Wu and Wang Zhang and Ru Zhang and Yanghua Peng and Haibin Lin and Chuan Wu},
+  year    = {2024},
+  journal = {arXiv preprint arXiv: 2409.19256}
+}
+@article{verl_vlm,
+  title   = {MultiModalMath: Multimodal VLMs RL Training Framework},
+  author  = {Wenetao Zhang},
+  year    = {2025},
+}
+```

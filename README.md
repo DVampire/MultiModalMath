@@ -10,11 +10,14 @@ conda activate verl
 pip3 install -e .
 
 # Install vLLM>=0.7
+pip3 uninstall vllm
 pip3 install vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
 
 # Install flash-attn
 pip3 install flash-attn --no-build-isolation
 
+pip3 uninstall torch
+# Support CUDA 12.1
 pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
 ```
 

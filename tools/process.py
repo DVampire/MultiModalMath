@@ -153,5 +153,5 @@ if __name__ == '__main__':
     output_path = os.path.join(ROOT, 'data', 'processed', 'multimodal_math')
     os.makedirs(output_path, exist_ok=True)
 
-    #process_train(output_path)
+    process_train(output_path)
     process_test(output_path)

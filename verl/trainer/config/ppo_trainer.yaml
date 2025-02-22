@@ -1,5 +1,4 @@
 data:
-  is_multimodal: False
   tokenizer: null
   train_files: ~/data/rlhf/gsm8k/train.parquet
   val_files: ~/data/rlhf/gsm8k/test.parquet
@@ -17,7 +16,7 @@ actor_rollout_ref:
   model:
     path: ~/models/deepseek-llm-7b-chat
     external_lib: null
-    override_config: { }
+    override_config: {}
     enable_gradient_checkpointing: True
     use_remove_padding: False
   actor:
@@ -49,6 +48,7 @@ actor_rollout_ref:
       param_offload: False
       optimizer_offload: False
       fsdp_size: -1
+      model_dtype: bfloat16
   ref:
     fsdp_config:
       param_offload: False
@@ -71,8 +71,8 @@ actor_rollout_ref:
     dtype: bfloat16 # should align with FSDP
     gpu_memory_utilization: 0.5
     ignore_eos: False
-    enforce_eager: True
-    free_cache_engine: True
+    enforce_eager: False
+    free_cache_engine: False
     load_format: dummy_dtensor
     tensor_model_parallel_size: 2
     max_num_batched_tokens: 8192

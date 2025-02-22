@@ -147,7 +147,7 @@ class ActorRolloutRefWorker(Worker):
                                role='actor'):
         from verl.utils.model import print_model_size, update_model_config, get_generation_config
         from verl.utils.torch_dtypes import PrecisionType
-        from transformers import AutoModelForCausalLM, AutoConfig
+        from transformers import AutoModelForCausalLM, AutoConfig, Qwen2_5_VLForConditionalGeneration
         from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, ShardingStrategy, MixedPrecision, CPUOffload
         from torch import optim
 
@@ -194,7 +194,7 @@ class ActorRolloutRefWorker(Worker):
 
         with init_context(), warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            actor_module = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=local_path,
+            actor_module = Qwen2_5_VLForConditionalGeneration.from_pretrained(pretrained_model_name_or_path=local_path,
                                                                 torch_dtype=torch_dtype,
                                                                 config=actor_model_config,
                                                                 attn_implementation='flash_attention_2',

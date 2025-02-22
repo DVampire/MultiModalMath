@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from pprint import pprint
-from typing import Type, Dict
+from typing import Type, Dict, List, Any
 from copy import deepcopy
 import base64
 
@@ -198,20 +198,18 @@ def _compute_response_info(batch):
         response_length=response_length,
     )
 
-def _chat_template_func(messages, is_multimodal = False):
-    res_messages = []
-    if not is_multimodal:
-        for message in messages:
-            new_message = {}
-            new_message['role'] = message['role']
-            new_message['content'] = message['content']
-            res_messages.append(new_message)
-    else:
-        for message in messages:
-            new_message = {}
-            new_message['role'] = message['role']
-            content = message['content']
-            new_content = []
+def _chat_template_func(messages):
+
+    converted_messages = []
+    for message in messages:
+        converted_message: Dict[str, Any] = {}
+        converted_message['role'] = message['role']
+        content = message['content']
+        if isinstance(content, str): # only text
+            converted_message['content'] = content
+            converted_messages.append(converted_message)
+        elif isinstance(content, (list, np.ndarray)): # list of text and image
+            converted_content: List[Dict[str, Any]] = []
             for item in content:
                 if item['type'] == 'image':
                     image = base64.b64encode(item['image']['bytes']).decode('utf-8')
@@ -219,18 +217,16 @@ def _chat_template_func(messages, is_multimodal = False):
                         "type": "image",
                         "image": "data:image;base64," + image
                     }
-                    new_content.append(new_item)
+                    converted_content.append(new_item)
                 elif item['type'] == 'text':
                     new_item = {
                         "type": "text",
                         "text": item['text']
                     }
-                    new_content.append(new_item)
-            new_message['content'] = new_content
-            res_messages.append(new_message)
-    return res_messages
-
-
+                    converted_content.append(new_item)
+            converted_message['content'] = converted_content
+            converted_messages.append(converted_message)
+    return converted_messages
 
 def compute_data_metrics(batch, use_critic=True):
     # TODO: add response length
@@ -498,7 +494,6 @@ class RayPPOTrainer(object):
         # TODO: we have to make sure the batch size is divisible by the dp size
         self.train_dataset = RLHFDataset(parquet_files=self.config.data.train_files,
                                          tokenizer=self.tokenizer,
-                                         is_multimodal=self.config.data.is_multimodal,
                                          prompt_key=self.config.data.prompt_key,
                                          max_prompt_length=self.config.data.max_prompt_length,
                                          filter_prompts=True,

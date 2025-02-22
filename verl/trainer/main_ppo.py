@@ -46,11 +46,8 @@ def main_task(config, compute_score=None):
     local_path = copy_local_path_from_hdfs(config.actor_rollout_ref.model.path)
 
     # instantiate tokenizer
-    from verl.utils import hf_tokenizer, hf_processor
-    if not config.data.is_multimodal:
-        tokenizer = hf_tokenizer(local_path)
-    else: # multimodal of Qwen2.5
-        tokenizer = hf_processor(local_path)
+    from verl.utils import hf_processor
+    tokenizer = hf_processor(local_path)
 
     # define worker classes
     if config.actor_rollout_ref.actor.strategy == 'fsdp':

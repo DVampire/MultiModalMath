@@ -64,7 +64,6 @@ class RLHFDataset(Dataset):
     def __init__(self,
                  parquet_files: Union[str, List[str]],
                  tokenizer: PreTrainedTokenizer,
-                 is_multimodal: bool = False,
                  prompt_key='prompt',
                  max_prompt_length=1024,
                  filter_prompts=True,
@@ -79,7 +78,6 @@ class RLHFDataset(Dataset):
         self.original_parquet_files = copy.deepcopy(parquet_files)  # use for resume
         self.cache_dir = os.path.expanduser(cache_dir)
         self.tokenizer = tokenizer
-        self.is_multimodal = is_multimodal
 
         self.prompt_key = prompt_key
         self.max_prompt_length = max_prompt_length
@@ -113,7 +111,7 @@ class RLHFDataset(Dataset):
 
         # convert to chat template
         if self.chat_template_func is not None:
-            self.dataframe[self.prompt_key] = self.dataframe[self.prompt_key].apply(lambda x: self.chat_template_func(x, self.is_multimodal))
+            self.dataframe[self.prompt_key] = self.dataframe[self.prompt_key].apply(lambda x: self.chat_template_func(x))
 
         tokenizer = self.tokenizer
         prompt_key = self.prompt_key

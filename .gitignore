@@ -160,8 +160,6 @@ workdir/
 datasets/
 script
 .vscode/
-data/*
-data/raw/*
-
+data
 # files begin with events.out
 events.out.*

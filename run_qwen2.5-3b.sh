@@ -1,21 +1,24 @@
 set -x
 
 export HOME=/home/jianguo.huang/zwt/MultiModalMath
+export HYDRA_FULL_ERROR=1
 
 nnodes=1
-n_gpus_per_node=1
+n_gpus_per_node=4
 project_name='verl'
 experiment_name='verl_Qwen2.5-VL-3B-Instruct_PPO'
 
-model_name=Qwen/Qwen2.5-VL-3B-Instruct
-train_path=$HOME/data/processed/multimodal_math/train.parquet
-test_path=$HOME/data/processed/multimodal_math/test.parquet
+model_name=hub/Qwen2.5-VL-3B-Instruct
+critic_model_name=hub/Qwen2.5-3B-Instruct
+mm_train_path=$HOME/data/processed/multimodal_math/train.parquet
+mm_test_path=$HOME/data/processed/multimodal_math/test.parquet
+gsm8k_train_path=$HOME/data/processed/gsm8k/train.parquet
+gsm8k_test_path=$HOME/data/processed/gsm8k/test.parquet
 
-train_files="['$train_path']"
-test_files="['$test_path']"
+train_files="['$mm_train_path', '$gsm8k_train_path']"
+test_files="['$mm_test_path', '$gsm8k_test_path']"
 
 python3 -m verl.trainer.main_ppo \
-    data.is_multimodal=True \
     data.train_files="$train_files" \
     data.val_files="$test_files" \
     data.train_batch_size=1024 \
@@ -25,7 +28,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.model.path=$model_name \
     actor_rollout_ref.model.enable_gradient_checkpointing=False \
     actor_rollout_ref.actor.optim.lr=1e-6 \
-    actor_rollout_ref.model.use_remove_padding=True \
+    actor_rollout_ref.model.use_remove_padding=False \
     actor_rollout_ref.actor.ppo_mini_batch_size=256 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
@@ -39,7 +42,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     critic.optim.lr=1e-5 \
     critic.model.use_remove_padding=True \
-    critic.model.path=Qwen/Qwen2.5-32B-Instruct \
+    critic.model.path=$critic_model_name \
     critic.model.enable_gradient_checkpointing=False \
     critic.ppo_micro_batch_size_per_gpu=8 \
     critic.model.fsdp_config.param_offload=False \

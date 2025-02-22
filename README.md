@@ -46,7 +46,7 @@ sh run_qwen2.5-vl-3b.sh
 }
 @article{verl_vlm,
   title   = {MultiModalMath: Multimodal VLMs RL Training Framework},
-  author  = {Wenetao Zhang},
+  author  = {Wentao Zhang},
   year    = {2025},
 }
 ```

@@ -7,15 +7,7 @@ A multimodal VLMs RL training framework based on verl, currently supporting only
 # Create the conda environment
 conda create -n verl python==3.10
 conda activate verl
-
-cd aux
-
-# Install verl
-git clone https://github.com/volcengine/verl.git
-cd verl
 pip3 install -e .
-
-cd ..
 
 # Install vLLM>=0.7
 pip3 install vllm --pre --extra-index-url https://wheels.vllm.ai/nightly

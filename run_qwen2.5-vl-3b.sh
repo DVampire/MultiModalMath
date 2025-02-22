@@ -1,10 +1,19 @@
 set -x
 
-export HOME=/home/jianguo.huang/zwt/MultiModalMath
+export HOME=/path/to/the/project
+export VLLM_ATTENTION_BACKEND=XFORMERS
 export HYDRA_FULL_ERROR=1
 
+# prepare environment
+cd aux/verl
+pip install -e .
+pip3 install vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
+pip3 install flash-attn --no-build-isolation
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+cd ../..
+
 nnodes=1
-n_gpus_per_node=4
+n_gpus_per_node=8
 project_name='verl'
 experiment_name='verl_Qwen2.5-VL-3B-Instruct_PPO'
 

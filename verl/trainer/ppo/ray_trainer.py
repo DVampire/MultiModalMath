@@ -356,6 +356,7 @@ class RayPPOTrainer(object):
     # i.e., support different backend of different role
     def __init__(self,
                  config,
+                 processor,
                  tokenizer,
                  role_worker_mapping: dict[Role, WorkerType],
                  resource_pool_manager: ResourcePoolManager,
@@ -365,6 +366,7 @@ class RayPPOTrainer(object):
 
         # assert torch.cuda.is_available(), 'cuda must be available on driver'
 
+        self.processor = processor
         self.tokenizer = tokenizer
         self.config = config
         self.reward_fn = reward_fn
@@ -493,6 +495,7 @@ class RayPPOTrainer(object):
         from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
         # TODO: we have to make sure the batch size is divisible by the dp size
         self.train_dataset = RLHFDataset(parquet_files=self.config.data.train_files,
+                                         processor=self.processor,
                                          tokenizer=self.tokenizer,
                                          prompt_key=self.config.data.prompt_key,
                                          max_prompt_length=self.config.data.max_prompt_length,
@@ -500,6 +503,7 @@ class RayPPOTrainer(object):
                                          chat_template_func=_chat_template_func,
                                          return_raw_chat=self.config.data.get('return_raw_chat', False),
                                          truncation='error')
+
         # use sampler for better ckpt resume
         if self.config.data.shuffle:
             train_dataloader_generator = torch.Generator()
@@ -515,6 +519,7 @@ class RayPPOTrainer(object):
                                            sampler=sampler)
 
         self.val_dataset = RLHFDataset(parquet_files=self.config.data.val_files,
+                                       processor=self.processor,
                                        tokenizer=self.tokenizer,
                                        prompt_key=self.config.data.prompt_key,
                                        max_prompt_length=self.config.data.max_prompt_length,
@@ -620,14 +625,9 @@ class RayPPOTrainer(object):
 
             test_gen_batch = test_batch.pop(['input_ids', 'attention_mask', 'position_ids'])
 
-            pad_token_id = self.tokenizer.pad_token_id if getattr(self.tokenizer, 'pad_token_id',
-                                                                  None) is not None else self.tokenizer.tokenizer.pad_token_id
-            eos_token_id = self.tokenizer.eos_token_id if getattr(self.tokenizer, 'eos_token_id',
-                                                                    None) is not None else self.tokenizer.tokenizer.eos_token_id
-
             test_gen_batch.meta_info = {
-                'eos_token_id': eos_token_id,
-                'pad_token_id': pad_token_id,
+                'eos_token_id': self.tokenizer.eos_token_id,
+                'pad_token_id': self.tokenizer.pad_token_id,
                 'recompute_log_prob': False,
                 'do_sample': False,
                 'validate': True,

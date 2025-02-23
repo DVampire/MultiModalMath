@@ -63,6 +63,7 @@ class RLHFDataset(Dataset):
 
     def __init__(self,
                  parquet_files: Union[str, List[str]],
+                 processor,
                  tokenizer: PreTrainedTokenizer,
                  prompt_key='prompt',
                  max_prompt_length=1024,
@@ -77,6 +78,7 @@ class RLHFDataset(Dataset):
         self.parquet_files = copy.deepcopy(parquet_files)
         self.original_parquet_files = copy.deepcopy(parquet_files)  # use for resume
         self.cache_dir = os.path.expanduser(cache_dir)
+        self.processor = processor
         self.tokenizer = tokenizer
 
         self.prompt_key = prompt_key
@@ -99,6 +101,22 @@ class RLHFDataset(Dataset):
         for i, parquet_file in enumerate(parquet_files):
             self.parquet_files[i] = copy_local_path_from_hdfs(src=parquet_file, cache_dir=self.cache_dir)
 
+    def _filter_dataframe(self,
+                          dataframe,
+                          processor,
+                          tokenizer,
+                          prompt_key):
+
+        if processor:
+            dataframe = dataframe[dataframe.apply(lambda doc: len(
+                processor.apply_chat_template(doc[prompt_key], add_generation_prompt=True)) <= self.max_prompt_length,
+                                                            axis=1)]
+        else:
+            dataframe = dataframe[dataframe.apply(lambda doc: len(
+                tokenizer.apply_chat_template(doc[prompt_key], add_generation_prompt=True)) <= self.max_prompt_length,
+                                                            axis=1)]
+        return dataframe
+
     def _read_files_and_tokenize(self):
         dataframes = []
         for parquet_file in self.parquet_files:
@@ -113,11 +131,10 @@ class RLHFDataset(Dataset):
         if self.chat_template_func is not None:
             self.dataframe[self.prompt_key] = self.dataframe[self.prompt_key].apply(lambda x: self.chat_template_func(x))
 
-        tokenizer = self.tokenizer
-        prompt_key = self.prompt_key
-        self.dataframe = self.dataframe[self.dataframe.apply(lambda doc: len(
-            tokenizer.apply_chat_template(doc[prompt_key], add_generation_prompt=True)) <= self.max_prompt_length,
-                              axis=1)]
+        self.dataframe = self._filter_dataframe(dataframe=self.dataframe,
+                                                processor=self.processor,
+                                                tokenizer=self.tokenizer,
+                                                prompt_key=self.prompt_key)
 
         print(f'filter dataset len: {len(self.dataframe)}')
 
@@ -141,12 +158,11 @@ class RLHFDataset(Dataset):
 
         chat = row_dict.pop(self.prompt_key)
 
-        pad_token_id = self.tokenizer.pad_token_id if getattr(self.tokenizer, 'pad_token_id',
-                                                              None) is not None else self.tokenizer.tokenizer.pad_token_id
         input_ids, attention_mask = verl_F.tokenize_and_postprocess_data(chat=chat,
+                                                                         processor=self.processor,
                                                                          tokenizer=self.tokenizer,
                                                                          max_length=self.max_prompt_length,
-                                                                         pad_token_id=pad_token_id,
+                                                                         pad_token_id=self.tokenizer.pad_token_type_id,
                                                                          left_pad=True,
                                                                          truncation=self.truncation)
 

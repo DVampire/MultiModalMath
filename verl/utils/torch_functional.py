@@ -258,6 +258,7 @@ from transformers import PreTrainedTokenizer
 
 
 def tokenize_and_postprocess_data(chat: List[Dict[str, Any]],
+                                  processor,
                                   tokenizer: PreTrainedTokenizer,
                                   max_length: int,
                                   pad_token_id: int,
@@ -268,17 +269,20 @@ def tokenize_and_postprocess_data(chat: List[Dict[str, Any]],
     """
     assert truncation in ['left', 'right', 'error']
 
-    text = tokenizer.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
-    image_inputs, video_inputs = process_vision_info(chat)
+    if processor:
+        text = processor.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
+        image_inputs, video_inputs = process_vision_info(chat)
 
-    input_data = tokenizer(
-        text=[text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
-    print(input_data)
+        input_data = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+    else:
+        text = tokenizer.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
+        input_data = tokenizer(text, padding=True, return_tensors="pt", truncation=truncation, max_length=max_length)
 
     input_ids = input_data['input_ids']
     attention_mask = input_data['attention_mask']

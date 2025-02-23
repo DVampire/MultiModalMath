@@ -72,4 +72,7 @@ def hf_processor(name_or_path, correct_pad_token=True, correct_gemma2=True, **kw
     """
     from transformers import AutoProcessor
     processor = AutoProcessor.from_pretrained(name_or_path, **kwargs)
-    return processor
+    tokenizer = processor.tokenizer
+    if correct_pad_token:
+        set_pad_token_id(tokenizer)
+    return processor, tokenizer

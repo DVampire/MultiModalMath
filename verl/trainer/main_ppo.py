@@ -46,8 +46,14 @@ def main_task(config, compute_score=None):
     local_path = copy_local_path_from_hdfs(config.actor_rollout_ref.model.path)
 
     # instantiate tokenizer
-    from verl.utils import hf_processor
-    tokenizer = hf_processor(local_path)
+    # if the model is Qwen2.5-VL, we must use the processor
+    if "Qwen2.5-VL" in config.actor_rollout_ref.model.path:
+        from verl.utils import hf_processor
+        processor, tokenizer = hf_processor(local_path)
+    else:
+        from verl.utils import hf_tokenizer
+        processor = None
+        tokenizer = hf_tokenizer(local_path)
 
     # define worker classes
     if config.actor_rollout_ref.actor.strategy == 'fsdp':
@@ -116,6 +122,7 @@ def main_task(config, compute_score=None):
     resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
     trainer = RayPPOTrainer(config=config,
+                            processor=processor,
                             tokenizer=tokenizer,
                             role_worker_mapping=role_worker_mapping,
                             resource_pool_manager=resource_pool_manager,

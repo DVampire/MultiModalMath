@@ -24,6 +24,7 @@ from tensordict import TensorDict
 from torch import nn
 from qwen_vl_utils import process_vision_info
 
+
 try:
     from flash_attn.ops.triton.cross_entropy import cross_entropy_loss
     FLAH_ATTN_CROSS_ENTROPY_LOSS_AVAILABLE = True
@@ -256,7 +257,7 @@ def pad_sequence_to_length(tensors, max_seq_len, pad_token_id, left_pad=False):
 from transformers import PreTrainedTokenizer
 
 
-def tokenize_and_postprocess_data(prompt: List[Dict[str, Any]],
+def tokenize_and_postprocess_data(chat: List[Dict[str, Any]],
                                   tokenizer: PreTrainedTokenizer,
                                   max_length: int,
                                   pad_token_id: int,
@@ -267,10 +268,11 @@ def tokenize_and_postprocess_data(prompt: List[Dict[str, Any]],
     """
     assert truncation in ['left', 'right', 'error']
 
-    image_inputs, video_inputs = process_vision_info(prompt)
+    text = tokenizer.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
+    image_inputs, video_inputs = process_vision_info(chat)
 
     input_data = tokenizer(
-        text=[prompt],
+        text=[text],
         images=image_inputs,
         videos=video_inputs,
         padding=True,

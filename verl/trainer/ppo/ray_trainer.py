@@ -619,9 +619,15 @@ class RayPPOTrainer(object):
             sample_inputs.extend(input_texts)
 
             test_gen_batch = test_batch.pop(['input_ids', 'attention_mask', 'position_ids'])
+
+            pad_token_id = self.tokenizer.pad_token_id if getattr(self.tokenizer, 'pad_token_id',
+                                                                  None) is not None else self.tokenizer.tokenizer.pad_token_id
+            eos_token_id = self.tokenizer.eos_token_id if getattr(self.tokenizer, 'eos_token_id',
+                                                                    None) is not None else self.tokenizer.tokenizer.eos_token_id
+
             test_gen_batch.meta_info = {
-                'eos_token_id': self.tokenizer.eos_token_id,
-                'pad_token_id': self.tokenizer.pad_token_id,
+                'eos_token_id': eos_token_id,
+                'pad_token_id': pad_token_id,
                 'recompute_log_prob': False,
                 'do_sample': False,
                 'validate': True,

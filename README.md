@@ -14,11 +14,12 @@ pip3 uninstall vllm
 pip3 install vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
 
 # Install flash-attn
-pip3 install flash-attn --no-build-isolation
+pip3 install --use-pep517 flash-attn --no-build-isolation
 
 pip3 uninstall torch
 # Support CUDA 12.1
-pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+pip3 install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+pip3 install qwen_vl_utils
 ```
 
 # Prepare data

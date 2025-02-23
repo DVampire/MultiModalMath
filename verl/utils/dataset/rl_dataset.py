@@ -141,12 +141,12 @@ class RLHFDataset(Dataset):
 
         chat = row_dict.pop(self.prompt_key)
 
-        prompt_with_chat_template = self.tokenizer.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
-
-        input_ids, attention_mask = verl_F.tokenize_and_postprocess_data(prompt=prompt_with_chat_template,
+        pad_token_id = self.tokenizer.pad_token_id if getattr(self.tokenizer, 'pad_token_id',
+                                                              None) is not None else self.tokenizer.tokenizer.pad_token_id
+        input_ids, attention_mask = verl_F.tokenize_and_postprocess_data(chat=chat,
                                                                          tokenizer=self.tokenizer,
                                                                          max_length=self.max_prompt_length,
-                                                                         pad_token_id=self.tokenizer.pad_token_id,
+                                                                         pad_token_id=pad_token_id,
                                                                          left_pad=True,
                                                                          truncation=self.truncation)
 
